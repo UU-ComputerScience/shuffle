@@ -3,6 +3,7 @@ Version:             0.1.0.0
 Copyright:           Utrecht University, Department of Information and Computing Sciences, Software Technology group
 Description:         Shuffle tool used by UHC (Utrecht Haskell Compiler)
 Homepage:            https://github.com/UU-ComputerScience/shuffle
+Bug-Reports:         https://github.com/UU-ComputerScience/shuffle/issues
 License:             BSD3
 License-file:        LICENSE
 Author:              UHC Team
