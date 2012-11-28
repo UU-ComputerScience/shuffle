@@ -2,7 +2,7 @@
 -- AspectExpr AST interface to Haskell
 -------------------------------------------------------------------------
 
-imports
+MODULE {UHC.Shuffle.AspectExpr} {}
 {
 import System.IO
 import qualified Data.Set as Set

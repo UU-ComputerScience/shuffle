@@ -2,7 +2,7 @@
 -- Chunk Parser
 -------------------------------------------------------------------------
 
-module ChunkParser
+module UHC.Shuffle.ChunkParser
   where
 
 import qualified Data.Set as Set
@@ -18,8 +18,8 @@ import UHC.Util.ScanUtils
 import UHC.Util.ParseUtils
 import UHC.Util.Utils
 
-import Common
-import MainAG
+import UHC.Shuffle.Common
+import UHC.Shuffle.MainAG
 
 -------------------------------------------------------------------------------------------
 -- Scanning

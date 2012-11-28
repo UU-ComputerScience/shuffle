@@ -2,9 +2,9 @@
 -- CDoc AST interface to Haskell
 -------------------------------------------------------------------------
 
-imports
+MODULE {UHC.Shuffle.CDoc} {}
 {
-import Common
+import UHC.Shuffle.Common
 import System.IO
 import qualified Data.Map as Map
 }

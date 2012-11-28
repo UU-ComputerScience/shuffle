@@ -2,15 +2,15 @@
 -- Common stuff based on CDoc
 -------------------------------------------------------------------------
 
-module CDocCommon
-  ( module Common
-  , module CDoc
+module UHC.Shuffle.CDocCommon
+  ( module UHC.Shuffle.Common
+  , module UHC.Shuffle.CDoc
   , NmChInfo(..), NmChMp
   )
   where
 
-import Common
-import CDoc
+import UHC.Shuffle.Common
+import UHC.Shuffle.CDoc
 import qualified Data.Map as Map
 
 -------------------------------------------------------------------------

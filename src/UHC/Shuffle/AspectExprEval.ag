@@ -2,11 +2,11 @@
 -- Evaluation of AspectExpr, given a set of AspectRef
 -------------------------------------------------------------------------
 
-MODULE {AspectExprEval} {aspexpIsAccepted}
+MODULE {UHC.Shuffle.AspectExprEval} {aspexpIsAccepted}
 {
 import qualified Data.Set as Set
 import qualified Data.Map as Map
-import AspectExpr
+import UHC.Shuffle.AspectExpr
 }
 
 INCLUDE "AspectExprAbsSyn.ag"

@@ -16,11 +16,11 @@ import UHC.Util.ParseUtils
 import UHC.Util.DependencyGraph
 import UHC.Util.FPath
 import UHC.Util.Pretty
-import Common
-import MainAG
-import ChunkParser
-import CDoc
-import CDocSubst
+import UHC.Shuffle.Common
+import UHC.Shuffle.MainAG
+import UHC.Shuffle.ChunkParser
+import UHC.Shuffle.CDoc
+import UHC.Shuffle.CDocSubst
 import Data.Char
 
 -------------------------------------------------------------------------

@@ -1,17 +1,17 @@
-file : "src/AspectExpr.ag"
-options : data, rename, module "AspectExpr"
+file : "src/UHC/Shuffle/AspectExpr.ag"
+options : data, rename, module "UHC.Shuffle.AspectExpr"
 
-file: "src/AspectExprEval.ag"
+file: "src/UHC/Shuffle/AspectExprEval.ag"
 options : catas, semfuns, signatures, pretty, rename
 
-file : "src/CDoc.ag"
-options : data, rename, module "CDoc"
+file : "src/UHC/Shuffle/CDoc.ag"
+options : data, rename, module "UHC.Shuffle.CDoc"
 
-file : "src/CDocSubst.ag"
+file : "src/UHC/Shuffle/CDocSubst.ag"
 options : catas, semfuns, signatures, pretty, rename
 
-file : "src/CDocInline.ag"
+file : "src/UHC/Shuffle/CDocInline.ag"
 options : catas, semfuns, signatures, pretty, rename
 
-file : "src/MainAG.ag"
-options : data, catas, semfuns, signatures, pretty, rename, module "MainAG"
+file : "src/UHC/Shuffle/MainAG.ag"
+options : data, catas, semfuns, signatures, pretty, rename, module "UHC.Shuffle.MainAG"

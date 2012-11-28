@@ -2,7 +2,7 @@
 -- Inlining files on CDoc
 -------------------------------------------------------------------------
 
-MODULE {CDocInline} {cdocInlineCDocIO, InlineCDocSt, InlineCDocIO}
+MODULE {UHC.Shuffle.CDocInline} {cdocInlineCDocIO, InlineCDocSt, InlineCDocIO}
 {
 import qualified Data.Map as Map
 import Network.URI
@@ -11,8 +11,8 @@ import System.Exit
 -- import System.Posix.Temp( mkstemp )
 import System.Directory( removeFile )
 import System.IO
-import CDoc
-import CDocCommon
+import UHC.Shuffle.CDoc
+import UHC.Shuffle.CDocCommon
 }
 
 INCLUDE "CDocAbsSyn.ag"

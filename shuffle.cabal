@@ -15,15 +15,15 @@ Executable shuffle
   Hs-Source-Dirs:    src
   Main-Is:           Shuffle.hs
   Extensions:        RankNTypes, TypeSynonymInstances, FlexibleInstances, FlexibleContexts
-  Other-Modules:     AspectExpr,
-                     AspectExprEval,
-                     Common,
-                     CDoc,
-                     CDocCommon,
-                     CDocSubst,
-                     CDocInline,
-                     ChunkParser,
-                     MainAG
+  Other-Modules:     UHC.Shuffle.AspectExpr,
+                     UHC.Shuffle.AspectExprEval,
+                     UHC.Shuffle.Common,
+                     UHC.Shuffle.CDoc,
+                     UHC.Shuffle.CDocCommon,
+                     UHC.Shuffle.CDocSubst,
+                     UHC.Shuffle.CDocInline,
+                     UHC.Shuffle.ChunkParser,
+                     UHC.Shuffle.MainAG
   Build-Depends:     base >= 4,
                      containers >= 0.4,
                      directory >= 1.2,

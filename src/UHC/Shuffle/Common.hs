@@ -2,13 +2,13 @@
 -- Common stuff
 -------------------------------------------------------------------------
 
-module Common
+module UHC.Shuffle.Common
   ( module Data.Maybe
   , module Data.Char
   , module UHC.Util.Nm
   , module UHC.Util.FPath
   , module UHC.Util.Pretty
-  , module AspectExpr
+  , module UHC.Shuffle.AspectExpr
 
   , Err(..), ErrM, ppErr, showUndef
 
@@ -60,8 +60,8 @@ import UHC.Util.Pretty
 import UHC.Util.FPath
 import UHC.Util.Utils
 import UHC.Util.Nm
-import AspectExpr
-import AspectExprEval
+import UHC.Shuffle.AspectExpr
+import UHC.Shuffle.AspectExprEval
 
 -------------------------------------------------------------------------
 -- Errors

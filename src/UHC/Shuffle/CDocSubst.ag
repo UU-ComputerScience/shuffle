@@ -2,12 +2,12 @@
 -- Substitution on CDoc
 -------------------------------------------------------------------------
 
-MODULE {CDocSubst} {cdocSubst}
+MODULE {UHC.Shuffle.CDocSubst} {cdocSubst}
 {
 import qualified Data.Set as Set
 import qualified Data.Map as Map
-import CDoc
-import CDocCommon
+import UHC.Shuffle.CDoc
+import UHC.Shuffle.CDocCommon
 }
 
 INCLUDE "CDocAbsSyn.ag"
