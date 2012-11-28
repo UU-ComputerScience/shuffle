@@ -12,6 +12,11 @@ Maintainer:          uhc-developers@lists.science.uu.nl
 Category:            Development
 Build-Type:          Custom
 Cabal-Version:       >= 1.8
+Extra-Source-Files:  uuagc_options,
+                     src/UHC/Shuffle/AspectExprAbsSyn.ag,
+                     src/UHC/Shuffle/CDocAbsSyn.ag,
+                     src/UHC/Shuffle/CDocCommonAG.ag,
+                     src/UHC/Shuffle/ChunkAbsSyn.ag
 
 Source-Repository head
   Type:              git
