@@ -1,22 +1,36 @@
-name:                shuffle
-version:             0.1.0.0
-copyright:			 Utrecht University, Department of Information and Computing Sciences, Software Technology group
--- synopsis:            
--- description:         
-homepage:            http://www.cs.uu.nl/wiki/UHC
-license:             BSD3
--- license-file:
-author:              UHC Team
-maintainer:          uhc-developers@lists.science.uu.nl
--- copyright:           
--- category:            
-build-type:          Custom
-cabal-version:       >=1.8
+Name:                shuffle
+Version:             0.1.0.0
+Copyright:           Utrecht University, Department of Information and Computing Sciences, Software Technology group
+Description:         Shuffle tool used by UHC (Utrecht Haskell Compiler)
+Homepage:            https://github.com/UU-ComputerScience/shuffle
+License:             BSD3
+License-file:        LICENSE
+Author:              UHC Team
+Maintainer:          uhc-developers@lists.science.uu.nl
+Category:            Development
+Build-Type:          Custom
+Cabal-Version:       >= 1.8
 
-executable shuffle
-  hs-source-dirs:      src
-  main-is:             Shuffle.hs
-  extensions:		   Rank2Types, TypeSynonymInstances, FlexibleInstances, FlexibleContexts
-  other-modules:       AspectExpr, AspectExprEval, Common, CDoc, CDocCommon, CDocSubst, CDocInline, ChunkParser, MainAG
-  build-depends:       base, containers, uulib, network, directory, process, array
-  build-depends:	   uuagc >= 0.9.40.3, uuagc-cabal >= 1.0.3.0, uhc-util >= 0.1.0.1
+Executable shuffle
+  Hs-Source-Dirs:    src
+  Main-Is:           Shuffle.hs
+  Extensions:        RankNTypes, TypeSynonymInstances, FlexibleInstances, FlexibleContexts
+  Other-Modules:     AspectExpr,
+                     AspectExprEval,
+                     Common,
+                     CDoc,
+                     CDocCommon,
+                     CDocSubst,
+                     CDocInline,
+                     ChunkParser,
+                     MainAG
+  Build-Depends:     base >= 4,
+                     containers >= 0.4,
+                     directory >= 1.2,
+                     network >= 2.3,
+                     process >= 1.1,
+                     array >= 0.4,
+                     uulib >= 0.9,
+                     uuagc >= 0.9.40.3,
+                     uuagc-cabal >= 1.0.3.0,
+                     uhc-util >= 0.1.0.1
