@@ -1,0 +1,17 @@
+file : "src/AspectExpr.ag"
+options : data, rename, module "AspectExpr"
+
+file: "src/AspectExprEval.ag"
+options : catas, semfuns, signatures, pretty, rename
+
+file : "src/CDoc.ag"
+options : data, rename, module "CDoc"
+
+file : "src/CDocSubst.ag"
+options : catas, semfuns, signatures, pretty, rename
+
+file : "src/CDocInline.ag"
+options : catas, semfuns, signatures, pretty, rename
+
+file : "src/MainAG.ag"
+options : data, catas, semfuns, signatures, pretty, rename, module "MainAG"
