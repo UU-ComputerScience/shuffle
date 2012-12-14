@@ -23,7 +23,34 @@ import System.FilePath ((</>), takeExtension, dropExtension, replaceExtension,
 import UHC.Util.FPath (FPath, fpathGetModificationTime, fpathFromStr)
 import UHC.Shuffle (shuffleCompile, parseOpts, getDeps, Opts, FPathWithAlias)
 
-
+-- | Add shuffle to a set of existing userhooks. To use shuffle together
+-- with UUAGC, define a Setup.hs as follows:
+--
+-- > import Distribution.Simple (defaultMainWithHooks)
+-- > import Distribution.Simple.Shuffle (shuffleHooks)
+-- > import Distribution.Simple.UUAGC (uuagcLibUserHook)
+-- > import UU.UUAGC (uuagc)
+-- >
+-- > main :: IO ()
+-- > main = defaultMainWithHooks (shuffleHooks (uuagcLibUserHook uuagc))
+--
+-- For .chs files, the shuffle settings can be configured in the
+-- .cabal file as follows:
+--
+-- >   x-shuffle-hs:        --gen-reqm=1 --preamble=no --lhs2tex=no --variant-order="1"
+--
+-- For the .cag files, the shuffle and AG options can be specified as:
+--
+-- >   x-shuffle-ag:        --gen-reqm=1 --preamble=no --lhs2tex=no --variant-order="1"
+-- >   x-shuffle-ag-d:      data, rename
+-- >   x-shuffle-ag-s:      catas, semfuns, signatures, pretty, rename
+-- >   x-shuffle-ag-sd:     data, catas, semfuns, signatures, pretty, rename, module
+-- >   x-shuffle-ag-d-dep:  Data/DataFile.cag
+-- >                        Another.cag
+-- >   x-shuffle-ag-s-dep:  Main.cag
+-- >                        Data/Imports.cag
+-- >                        Another.cag
+--
 shuffleHooks :: UserHooks -> UserHooks
 shuffleHooks h = h {
   buildHook = shuffleBuildHook (buildHook h),
