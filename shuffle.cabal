@@ -25,7 +25,8 @@ Source-Repository head
 Library
   Hs-Source-Dirs:    src
   Extensions:        RankNTypes, TypeSynonymInstances, FlexibleInstances, FlexibleContexts
-  Exposed-Modules:   UHC.Shuffle
+  Exposed-Modules:   UHC.Shuffle,
+                     Distribution.Simple.Shuffle
   Other-Modules:     UHC.Shuffle.AspectExpr,
                      UHC.Shuffle.AspectExprEval,
                      UHC.Shuffle.Common,
@@ -44,7 +45,9 @@ Library
                      uulib >= 0.9,
                      uuagc >= 0.9.40.3,
                      uuagc-cabal >= 1.0.3.0,
-                     uhc-util >= 0.1.0.2
+                     uhc-util >= 0.1.0.2,
+                     Cabal >= 1.16,
+                     filepath >= 1.2
 
 Executable shuffle
   Hs-Source-Dirs:    src-main
