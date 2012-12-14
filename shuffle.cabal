@@ -46,7 +46,7 @@ Library
                      uuagc >= 0.9.40.3,
                      uuagc-cabal >= 1.0.3.0,
                      uhc-util >= 0.1.0.2,
-                     Cabal >= 1.16,
+                     Cabal >= 1.14,
                      filepath >= 1.2
 
 Executable shuffle
