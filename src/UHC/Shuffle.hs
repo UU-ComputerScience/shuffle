@@ -2,7 +2,14 @@
 -- Main
 -------------------------------------------------------------------------
 
-module Main where
+module UHC.Shuffle (
+   shuffleMain,
+   shuffleCompile,
+   getDeps,
+   FPathWithAlias,
+   Opts,
+   defaultOpts,
+   parseOpts ) where
 
 import qualified Data.Set as Set
 import qualified Data.Map as Map
@@ -29,20 +36,24 @@ import Data.Char
 
 type FPathWithAlias = (Maybe String,FPath)
 
-main :: IO ()
-main
+shuffleMain :: IO ()
+shuffleMain
   = do { args <- getArgs
-       ; let oo@(o,n,errs)  = getOpt Permute cmdLineOpts args
-             opts           = foldr ($) defaultOpts o
+       ; let (opts,f,frest,errs) = parseOpts args
        ; if optHelp opts
          then putStrLn (usageInfo "Usage shuffle [options] [file ([alias=]file)*|-]\n\noptions:" cmdLineOpts)
          else if null errs
-              then  let (f,frest) = if null n then (emptyFPath,[]) else if head n == "-" then (emptyFPath,tail n) else (mkFPath (head n),tail n)
-                    in  if optGenDeps opts
-                        then genDeps f opts
-                        else doCompile (Nothing,f) (map mkFPathAlias frest) opts
+              then if optGenDeps opts
+                   then genDeps f opts
+                   else shuffleCompile stdout opts f frest
               else  putStr (head errs)
        }
+
+parseOpts :: [String] -> (Opts, FPath, [FPathWithAlias], [String])
+parseOpts args = let (o,n,errs)  = getOpt Permute cmdLineOpts args
+                     opts        = foldr ($) defaultOpts o
+                     (f,frest)   = if null n then (emptyFPath,[]) else if head n == "-" then (emptyFPath,tail n) else (mkFPath (head n),tail n)
+                 in  (opts, f, map mkFPathAlias frest, errs)
   where mkFPathAlias s
           = case break (=='=') s of
               (a,('=':f)) -> (Just a ,mkFPath f)
@@ -67,14 +78,14 @@ doCompile' f opts
        ; return (wrapAG_T opts fp Set.empty Map.empty pres)
        }
 
-doCompile :: FPathWithAlias -> [FPathWithAlias] -> Opts -> IO ()
-doCompile fpa fpaRest opts
+shuffleCompile :: Handle -> Opts -> FPath -> [FPathWithAlias] -> IO ()
+shuffleCompile out opts fpa fpaRest
   = do { xrefExceptFileContent
            <- case optMbXRefExcept opts of
                 Just f -> do c <- readFile f
                              return (Set.unions . map (Set.fromList . words) . lines $ c)
                 Nothing -> return Set.empty
-       ; allPRes@(((_,fp'),pres):restPRes) <- mapM (\f -> readShFile f opts) (fpa:fpaRest)
+       ; allPRes@(((_,fp'),pres):restPRes) <- mapM (\f -> readShFile f opts) ((Nothing,fpa):fpaRest)
        ; let (nmChMp,hdL) = allNmChMpOf allPRes
              fb = fpathBase fp'
              res = wrapSem fp' xrefExceptFileContent Map.empty pres
@@ -102,7 +113,7 @@ doCompile fpa fpaRest opts
                     ; let (bs,nms,errml) = unzip3 b'
                           errm = Map.unions errml
                     ; putErrs errm
-                    ; mapM_ (cdPut stdout) bs
+                    ; mapM_ (cdPut out) bs
                     ; return (Set.unions nms)
                     }
             else return Set.empty
@@ -146,26 +157,27 @@ genDeps :: FPath -> Opts -> IO ()
 genDeps f opts
   = do filenames <- do c <- readFile (fpathToStr f)
                        return $ filter (not . null) (lines c)
-       depMap <- trans getDeps filenames
+       depMap <- trans (getDeps opts) filenames
        let depGraph = mkDpdGrFromEdgesMpPadMissing depMap
        let depL = [(r, filter (not . (`elem` filenames)) . stripIgn . Set.toList $ dgReachableFrom depGraph r) | r <- filenames ]
        genDepsMakefile depL opts
        return ()
   where
-    mp = optDepTerm opts
     ignSet = optDepIgn opts
     stripIgn = filter (not . flip Set.member ignSet . stripDir)
 
-    getDeps fname
-      = Map.findWithDefault
-          ( do let baseDir = optDepBaseDir opts
-               let baseDir' = if last baseDir /= '/' then baseDir ++ "/" else baseDir
-               let fpath = fpathSetSuff "cag" $ mkFPath (baseDir' ++ fname)
-               res <- doCompile' fpath opts
-               return (deps_Syn_AGItf res)
-          ) name (Map.map return mp)
+getDeps :: Opts -> String -> IO [String]
+getDeps opts fname
+  = Map.findWithDefault
+    ( do let baseDir = optDepBaseDir opts
+         let baseDir' = if last baseDir /= '/' then baseDir ++ "/" else baseDir
+         let fpath = fpathSetSuff "cag" $ mkFPath (baseDir' ++ fname)
+         res <- doCompile' fpath opts
+         return (deps_Syn_AGItf res)
+    ) name (Map.map return mp)
       where
         name = fpathBase . mkFPath $ fname
+        mp = optDepTerm opts
 
 stripDir :: String -> String
 stripDir = fpathToStr . fpathRemoveDir . mkFPath

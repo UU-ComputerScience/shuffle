@@ -1,5 +1,5 @@
 Name:                shuffle
-Version:             0.1.0.1
+Version:             0.1.0.2
 Copyright:           Utrecht University, Department of Information and Computing Sciences, Software Technology group
 Description:         Shuffle tool used by UHC (Utrecht Haskell Compiler)
 Synopsis:            Shuffle tool for UHC
@@ -22,10 +22,10 @@ Source-Repository head
   Type:              git
   Location:          https://github.com/UU-ComputerScience/shuffle.git
 
-Executable shuffle
+Library
   Hs-Source-Dirs:    src
-  Main-Is:           Shuffle.hs
   Extensions:        RankNTypes, TypeSynonymInstances, FlexibleInstances, FlexibleContexts
+  Exposed-Modules:   UHC.Shuffle
   Other-Modules:     UHC.Shuffle.AspectExpr,
                      UHC.Shuffle.AspectExprEval,
                      UHC.Shuffle.Common,
@@ -45,3 +45,9 @@ Executable shuffle
                      uuagc >= 0.9.40.3,
                      uuagc-cabal >= 1.0.3.0,
                      uhc-util >= 0.1.0.2
+
+Executable shuffle
+  Hs-Source-Dirs:    src-main
+  Main-Is:           Main.hs
+  Build-Depends:     base >= 4 && < 5,
+                     shuffle == 0.1.0.2
