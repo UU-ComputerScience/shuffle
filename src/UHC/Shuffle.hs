@@ -159,12 +159,9 @@ genDeps f opts
                        return $ filter (not . null) (lines c)
        depMap <- trans (getDeps opts) filenames
        let depGraph = mkDpdGrFromEdgesMpPadMissing depMap
-       let depL = [(r, filter (not . (`elem` filenames)) . stripIgn . Set.toList $ dgReachableFrom depGraph r) | r <- filenames ]
+       let depL = [(r, filter (not . (`elem` filenames)) . Set.toList $ dgReachableFrom depGraph r) | r <- filenames ]
        genDepsMakefile depL opts
        return ()
-  where
-    ignSet = optDepIgn opts
-    stripIgn = filter (not . flip Set.member ignSet . stripDir)
 
 getDeps :: Opts -> String -> IO [String]
 getDeps opts fname
@@ -173,11 +170,13 @@ getDeps opts fname
          let baseDir' = if last baseDir /= '/' then baseDir ++ "/" else baseDir
          let fpath = fpathSetSuff "cag" $ mkFPath (baseDir' ++ fname)
          res <- doCompile' fpath opts
-         return (deps_Syn_AGItf res)
+         return $ stripIgn $ deps_Syn_AGItf res
     ) name (Map.map return mp)
       where
         name = fpathBase . mkFPath $ fname
         mp = optDepTerm opts
+        ignSet = optDepIgn opts
+        stripIgn = filter (not . flip Set.member ignSet . stripDir)
 
 stripDir :: String -> String
 stripDir = fpathToStr . fpathRemoveDir . mkFPath
