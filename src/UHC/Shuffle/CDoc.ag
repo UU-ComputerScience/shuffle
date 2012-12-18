@@ -92,10 +92,11 @@ instance CD a => CD (Maybe a) where
   cd = maybe CDoc_Emp cd
 
 cdIsEmpty :: CDoc -> Bool
-cdIsEmpty d
-  = case d of
-      CDoc_Emp -> True
-      _        -> False
+cdIsEmpty (CDoc_Emp)       = True
+cdIsEmpty (CDoc_Hor d1 d2) = cdIsEmpty d1 && cdIsEmpty d2
+cdIsEmpty (CDoc_Ver d1 d2) = cdIsEmpty d1 && cdIsEmpty d2
+cdIsEmpty (CDoc_Str s)     = null s
+cdIsEmpty _                = False
 
 cdToMaybe :: CDoc -> Maybe CDoc
 cdToMaybe d
