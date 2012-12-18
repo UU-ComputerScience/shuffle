@@ -45,7 +45,7 @@ shuffleMain
          else if null errs
               then if optGenDeps opts
                    then genDeps f opts
-                   else shuffleCompile stdout opts f frest
+                   else shuffleCompile stdout opts f frest >> return ()
               else  putStr (head errs)
        }
 
@@ -78,7 +78,7 @@ doCompile' f opts
        ; return (wrapAG_T opts fp Set.empty Map.empty pres)
        }
 
-shuffleCompile :: Handle -> Opts -> FPath -> [FPathWithAlias] -> IO ()
+shuffleCompile :: Handle -> Opts -> FPath -> [FPathWithAlias] -> IO Bool
 shuffleCompile out opts fpa fpaRest
   = do { xrefExceptFileContent
            <- case optMbXRefExcept opts of
@@ -91,10 +91,11 @@ shuffleCompile out opts fpa fpaRest
              res = wrapSem fp' xrefExceptFileContent Map.empty pres
              bld = selBld opts res
              topChNmS = Set.unions [ Set.map (mkFullNm fb) . Map.keysSet . bldNmChMp $ b | b <- bld ]
-       ; subsChNmS <- putBld nmChMp bld
+       ; (empt,subsChNmS) <- putBld nmChMp bld
        ; let allChNmS = subsChNmS `Set.union` topChNmS
              hdL' = [ h | (n,h) <- hdL, n `Set.member` allChNmS ]
        ; putHideBld opts fb nmChMp hdL'
+       ; return empt
        }
   where mkFullNm b n = mkNm b `nmApd` n
         selBld opts res
@@ -114,9 +115,9 @@ shuffleCompile out opts fpa fpaRest
                           errm = Map.unions errml
                     ; putErrs errm
                     ; mapM_ (cdPut out) bs
-                    ; return (Set.unions nms)
+                    ; return (all cdIsEmpty bs, Set.unions nms)
                     }
-            else return Set.empty
+            else return (True, Set.empty)
         putHideBld opts fb nmChMp hdL
           = case optChDest opts of
               (ChHere,_) -> return ()

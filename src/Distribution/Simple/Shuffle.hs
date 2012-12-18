@@ -10,12 +10,13 @@ import Distribution.Simple.Utils (die, warn, info, notice, findFileWithExtension
 import Distribution.Simple.Setup (BuildFlags(..), fromFlagOrDefault)
 import Distribution.Verbosity (Verbosity, normal, silent)
 import Distribution.ParseUtils (runP, parseOptCommaList, parseFilePathQ, ParseResult (..))
-import Distribution.ModuleName (fromString)
+import Distribution.ModuleName (fromString, ModuleName)
 
-import Control.Monad (forM, forM_)
+import Control.Monad (forM, forM_, when)
 import Data.Char (isSpace)
+import Data.Maybe (catMaybes)
 import Data.List ((\\), union, intersect, nub, intercalate)
-import System.IO (openFile, IOMode(..), hClose)
+import System.IO (openFile, IOMode(..), hClose, withFile, hFileSize)
 import System.Directory (doesFileExist)
 import System.FilePath ((</>), takeExtension, dropExtension, replaceExtension,
                         normalise, pathSeparator, dropFileName)
@@ -59,7 +60,7 @@ shuffleHooks h = h {
 chsPrep :: BuildInfo -> LocalBuildInfo -> PreProcessor
 chsPrep buildInfo localBuildInfo = PreProcessor {
   platformIndependent = True,
-  runPreProcessor = mkSimplePreProcessor (preprocess buildInfo "hs") }
+  runPreProcessor = mkSimplePreProcessor (\i o v -> preprocess buildInfo "hs" i o v >> return ()) }
 
 parseFileList :: String -> String -> Verbosity -> IO [FilePath]
 parseFileList fieldName field verbosity =
@@ -67,7 +68,10 @@ parseFileList fieldName field verbosity =
     ParseFailed err    -> die $ show err
     ParseOk warnings r -> mapM_ (warn verbosity . show) warnings >> return r
 
-generateAG :: FilePath -> BuildInfo -> Verbosity -> [String] -> IO ()
+toModuleName :: FilePath -> ModuleName
+toModuleName = fromString . map (\x -> if x == pathSeparator then '.' else x) . dropExtension
+
+generateAG :: FilePath -> BuildInfo -> Verbosity -> [String] -> IO [ModuleName]
 generateAG outDir bi verbosity files = do
   -- Find all cag files and their dependencies
   deps <- forM files $ \inFile -> do
@@ -75,13 +79,26 @@ generateAG outDir bi verbosity files = do
     case mbPath of
       Nothing -> die $ "can't find source for " ++ inFile ++ " in " ++ intercalate ", " (hsSourceDirs bi)
       Just (dir,file) -> do
-        (opts, _, _) <- getOpts silent bi "dep" ["--depbase=" ++ dir] file
-        deps' <- getDeps opts file
-        return $ (dir,file) : map (\dep -> (dir,replaceExtension dep "cag")) deps'
-  -- Preprocess them all
-  forM_ (nub $ concat deps) $ \(inDir,inFile) -> do
+        -- Preprocess this file
+        let outFile = outDir </> replaceExtension file "ag"
+        empt <- preprocess bi "ag" (normalise $ dir </> file) outFile verbosity
+        if empt
+          then return (Nothing, [])
+          else do
+            -- Construct modulename to export
+            let modName = toModuleName file
+            -- Find dependencies
+            (opts, _, _) <- getOpts silent bi "dep" ["--depbase=" ++ dir] file
+            deps' <- getDeps opts file
+            let deps'' = map (\dep -> (dir,replaceExtension dep "cag")) deps'
+            return $ (Just modName, deps'')
+  -- Preprocess all dependencies
+  forM_ (nub $ concat $ map snd deps) $ \(inDir,inFile) -> do
     let outFile = outDir </> replaceExtension inFile "ag"
     preprocess bi "ag" (normalise $ inDir </> inFile) outFile verbosity
+  forM_ (map fst deps) print
+  -- Return all extra modules that should be build
+  return $ catMaybes $ map fst deps
 
 shuffleBuildHook :: (PackageDescription -> LocalBuildInfo -> UserHooks -> BuildFlags -> IO ()) -> PackageDescription -> LocalBuildInfo -> UserHooks -> BuildFlags -> IO ()
 shuffleBuildHook origBuildHook pd lbi hook bf = do
@@ -110,9 +127,7 @@ shuffleBuildHook origBuildHook pd lbi hook bf = do
         semDataOpts <- extraOpts "x-shuffle-ag-ds" (semFiles `intersect` dataFiles)
         -- Now generate all ag files
         let allFiles = semFiles `union` dataFiles
-        generateAG outDir bi verbosity allFiles
-        -- All other modules that should be build
-        let extraModules = map (fromString . map (\x -> if x == pathSeparator then '.' else x) . dropExtension) allFiles
+        extraModules <- generateAG outDir bi verbosity allFiles
         -- Update the corresponding fields
         return $ bi { customFieldsBI = dataOpts ++ semOpts ++ semDataOpts ++ customFieldsBI bi 
                     , otherModules = extraModules ++ otherModules bi 
@@ -131,7 +146,7 @@ shuffleBuildHook origBuildHook pd lbi hook bf = do
     return $ test { testBuildInfo = newBi }
   origBuildHook (pd { executables = exes, library = lib, testSuites = tests }) lbi hook bf
 
-preprocess :: BuildInfo -> String -> FilePath -> FilePath -> Verbosity -> IO ()
+preprocess :: BuildInfo -> String -> FilePath -> FilePath -> Verbosity -> IO Bool
 preprocess buildInfo tp inFile outFile verbosity = do
   rebuild <- shouldRebuild inFile outFile
   if rebuild
@@ -140,11 +155,17 @@ preprocess buildInfo tp inFile outFile verbosity = do
       info verbosity $ "Using the following options:"
       (opts,f,frest) <- getOpts verbosity buildInfo tp [] inFile
       createDirectoryIfMissingVerbose verbosity True (dropFileName outFile)
-      out  <- openFile outFile WriteMode
-      shuffleCompile out opts f frest
+      out <- openFile outFile WriteMode
+      ret <- shuffleCompile out opts f frest
       hClose out
-    else
+      -- Make sure empty files are actually empty
+      when ret $ writeFile outFile ""
+      return ret
+    else do
       info verbosity $ "[Shuffle] Skipping " ++ inFile
+      -- Check filesize to know if file is empty
+      size <- withFile outFile ReadMode hFileSize
+      return (size == 0)
 
 shouldRebuild :: FilePath -> FilePath -> IO Bool
 shouldRebuild inFile outFile = do
