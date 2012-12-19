@@ -6,7 +6,7 @@ import Distribution.PackageDescription (PackageDescription (..), BuildInfo (..),
                                         Library (..), TestSuite (..))
 import Distribution.Simple.LocalBuildInfo (LocalBuildInfo (..))
 import Distribution.Simple.Utils (die, warn, info, notice, findFileWithExtension', 
-                                  createDirectoryIfMissingVerbose)
+                                  createDirectoryIfMissingVerbose, getDirectoryContentsRecursive)
 import Distribution.Simple.Setup (BuildFlags(..), fromFlagOrDefault)
 import Distribution.Verbosity (Verbosity, normal, silent)
 import Distribution.ParseUtils (runP, parseOptCommaList, parseFilePathQ, ParseResult (..))
@@ -53,14 +53,7 @@ import UHC.Shuffle (shuffleCompile, parseOpts, getDeps, Opts, FPathWithAlias)
 -- >                        Another.cag
 --
 shuffleHooks :: UserHooks -> UserHooks
-shuffleHooks h = h {
-  buildHook = shuffleBuildHook (buildHook h),
-  hookedPreProcessors = ("chs", chsPrep) : hookedPreProcessors h }
-
-chsPrep :: BuildInfo -> LocalBuildInfo -> PreProcessor
-chsPrep buildInfo localBuildInfo = PreProcessor {
-  platformIndependent = True,
-  runPreProcessor = mkSimplePreProcessor (\i o v -> preprocess buildInfo "hs" i o v >> return ()) }
+shuffleHooks h = h { buildHook = shuffleBuildHook (buildHook h)  }
 
 parseFileList :: String -> String -> Verbosity -> IO [FilePath]
 parseFileList fieldName field verbosity =
@@ -70,6 +63,19 @@ parseFileList fieldName field verbosity =
 
 toModuleName :: FilePath -> ModuleName
 toModuleName = fromString . map (\x -> if x == pathSeparator then '.' else x) . dropExtension
+
+prepCHS :: [FilePath] -> FilePath -> BuildInfo -> Verbosity -> IO [ModuleName]
+prepCHS ignore outDir bi verbosity = do
+  fs <- forM (hsSourceDirs bi) $ \dir -> do
+    contents <- getDirectoryContentsRecursive dir
+    let chs  = filter ((==".chs") . takeExtension) contents
+    let chs' = filter (not . (`elem` ignore)) chs
+    fs <- forM chs' $ \file -> do
+      let outFile = outDir </> replaceExtension file "hs"
+      empt <- preprocess bi "hs" (normalise $ dir </> file) outFile verbosity
+      return $ if empt then Nothing else Just (toModuleName file)
+    return $ catMaybes fs
+  return $ concat fs
 
 generateAG :: FilePath -> BuildInfo -> Verbosity -> [String] -> IO [ModuleName]
 generateAG outDir bi verbosity files = do
@@ -96,14 +102,13 @@ generateAG outDir bi verbosity files = do
   forM_ (nub $ concat $ map snd deps) $ \(inDir,inFile) -> do
     let outFile = outDir </> replaceExtension inFile "ag"
     preprocess bi "ag" (normalise $ inDir </> inFile) outFile verbosity
-  forM_ (map fst deps) print
   -- Return all extra modules that should be build
   return $ catMaybes $ map fst deps
 
 shuffleBuildHook :: (PackageDescription -> LocalBuildInfo -> UserHooks -> BuildFlags -> IO ()) -> PackageDescription -> LocalBuildInfo -> UserHooks -> BuildFlags -> IO ()
 shuffleBuildHook origBuildHook pd lbi hook bf = do
   let verbosity = fromFlagOrDefault normal (buildVerbosity bf)
-  let addOpts :: FilePath -> BuildInfo -> IO BuildInfo
+  let addOpts :: FilePath -> BuildInfo -> IO ([ModuleName], BuildInfo)
       addOpts outDir bi = do
         -- Read options from cabal and settings file
         let fields = customFieldsBI bi
@@ -127,23 +132,32 @@ shuffleBuildHook origBuildHook pd lbi hook bf = do
         semDataOpts <- extraOpts "x-shuffle-ag-ds" (semFiles `intersect` dataFiles)
         -- Now generate all ag files
         let allFiles = semFiles `union` dataFiles
-        extraModules <- generateAG outDir bi verbosity allFiles
+        modulesAG <- generateAG outDir bi verbosity allFiles
+        -- And preprocess all chs files
+        ignore <- case "x-shuffle-hs-ign" `lookup` fields of
+          Just files -> parseFileList "x-shuffle-hs-ign" files verbosity
+          _          -> return []
+        modulesHS <- prepCHS ignore outDir bi verbosity
         -- Update the corresponding fields
-        return $ bi { customFieldsBI = dataOpts ++ semOpts ++ semDataOpts ++ customFieldsBI bi 
-                    , otherModules = extraModules ++ otherModules bi 
-                    , hsSourceDirs = outDir : hsSourceDirs bi }
+        let mods = modulesAG ++ modulesHS
+        let newBi = bi { customFieldsBI = dataOpts ++ semOpts ++ semDataOpts ++ customFieldsBI bi
+                       , hsSourceDirs = outDir : hsSourceDirs bi }
+        return $ (mods, newBi)
   -- Add all options and continue with original hook
   exes <- forM (executables pd) $ \exe -> do
-    newBi <- addOpts (buildDir lbi </> exeName exe </> exeName exe ++ "-tmp") (buildInfo exe)
-    return $ exe { buildInfo = newBi }
+    (mods, newBi) <- addOpts (buildDir lbi </> exeName exe </> exeName exe ++ "-tmp") (buildInfo exe)
+    let newBi' = newBi { otherModules = mods ++ otherModules newBi }
+    return $ exe { buildInfo = newBi' }
   lib <- case library pd of
     Just l -> do
-      newBi <- addOpts (buildDir lbi) (libBuildInfo l)
-      return $ Just $ l { libBuildInfo = newBi }
+      (mods, newBi) <- addOpts (buildDir lbi) (libBuildInfo l)
+      return $ Just $ l { libBuildInfo = newBi
+                        , exposedModules = mods ++ exposedModules l }
     Nothing -> return Nothing
   tests <- forM (testSuites pd) $ \test -> do
-    newBi <- addOpts (buildDir lbi </> testName test </> testName test ++ "-tmp") (testBuildInfo test)
-    return $ test { testBuildInfo = newBi }
+    (mods, newBi) <- addOpts (buildDir lbi </> testName test </> testName test ++ "-tmp") (testBuildInfo test)
+    let newBi' = newBi { otherModules = mods ++ otherModules newBi }
+    return $ test { testBuildInfo = newBi' }
   origBuildHook (pd { executables = exes, library = lib, testSuites = tests }) lbi hook bf
 
 preprocess :: BuildInfo -> String -> FilePath -> FilePath -> Verbosity -> IO Bool
@@ -156,11 +170,11 @@ preprocess buildInfo tp inFile outFile verbosity = do
       (opts,f,frest) <- getOpts verbosity buildInfo tp [] inFile
       createDirectoryIfMissingVerbose verbosity True (dropFileName outFile)
       out <- openFile outFile WriteMode
-      ret <- shuffleCompile out opts f frest
+      empt <- shuffleCompile out opts f frest
       hClose out
       -- Make sure empty files are actually empty
-      when ret $ writeFile outFile ""
-      return ret
+      when empt $ writeFile outFile ""
+      return empt
     else do
       info verbosity $ "[Shuffle] Skipping " ++ inFile
       -- Check filesize to know if file is empty
