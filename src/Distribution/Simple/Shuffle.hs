@@ -7,7 +7,7 @@ import Distribution.PackageDescription (PackageDescription (..), BuildInfo (..),
 import Distribution.Simple.LocalBuildInfo (LocalBuildInfo (..))
 import Distribution.Simple.Utils (die, warn, info, notice, findFileWithExtension', 
                                   createDirectoryIfMissingVerbose, getDirectoryContentsRecursive)
-import Distribution.Simple.Setup (BuildFlags(..), fromFlagOrDefault)
+import Distribution.Simple.Setup (BuildFlags(..), SDistFlags(..), fromFlagOrDefault)
 import Distribution.Verbosity (Verbosity, normal, silent)
 import Distribution.ParseUtils (runP, parseOptCommaList, parseFilePathQ, ParseResult (..))
 import Distribution.ModuleName (fromString, ModuleName)
@@ -53,7 +53,8 @@ import UHC.Shuffle (shuffleCompile, parseOpts, getDeps, Opts, FPathWithAlias)
 -- >                        Another.cag
 --
 shuffleHooks :: UserHooks -> UserHooks
-shuffleHooks h = h { buildHook = shuffleBuildHook (buildHook h)  }
+shuffleHooks h = h { buildHook = shuffleBuildHook (buildHook h)  
+                   , sDistHook = mySDist (sDistHook h) }
 
 parseFileList :: String -> String -> Verbosity -> IO [FilePath]
 parseFileList fieldName field verbosity =
@@ -214,3 +215,64 @@ argWords = map reverse . filter (not . null) . f False ""
     f False cur ('"':xs) = f True cur xs
     f False cur (x:xs) | isSpace x = cur : f False "" xs
                        | otherwise = f False (x:cur) xs
+
+--- For SDist
+cagFiles :: BuildInfo -> Verbosity -> [String] -> IO [FilePath]
+cagFiles bi verbosity files = do
+  -- Find all cag files and their dependencies
+  deps <- forM files $ \inFile -> do
+    mbPath <- findFileWithExtension' [takeExtension inFile] (hsSourceDirs bi) (dropExtension inFile)
+    case mbPath of
+      Nothing -> die $ "can't find source for " ++ inFile ++ " in " ++ intercalate ", " (hsSourceDirs bi)
+      Just (dir,file) -> do
+        let f1 = normalise $ dir </> file
+        -- Find dependencies
+        (opts, _, _) <- getOpts silent bi "dep" ["--depbase=" ++ dir] file
+        deps' <- getDeps opts file
+        let deps'' = map (\dep -> normalise $ dir </> replaceExtension dep "cag") deps'
+        return $ f1 : deps''
+  return $ concat deps
+
+chsFiles :: [FilePath] -> BuildInfo -> IO [FilePath]
+chsFiles ignore bi = do
+  fs <- forM (hsSourceDirs bi) $ \dir -> do
+    contents <- getDirectoryContentsRecursive dir
+    return $
+      map (\file -> normalise $ dir </> file) $ 
+      filter (not . (`elem` ignore)) $
+      filter ((==".chs") . takeExtension) contents
+  return $ concat fs
+
+mySDist :: (PackageDescription -> Maybe LocalBuildInfo -> UserHooks -> SDistFlags -> IO ()) -> PackageDescription -> Maybe LocalBuildInfo -> UserHooks -> SDistFlags -> IO ()
+mySDist origSDist pd mblbi hooks flags = do
+  let verbosity = fromFlagOrDefault normal (sDistVerbosity flags)
+  extraSrc <- mapBuildInfos pd $ \bi -> do
+    let fields = customFieldsBI bi
+    -- Chs files
+    ignore <- case "x-shuffle-hs-ign" `lookup` fields of
+          Just files -> parseFileList "x-shuffle-hs-ign" files verbosity
+          _          -> return []
+    chs <- chsFiles ignore bi
+    -- Ag files
+    -- Get data files
+    dataFiles <- case "x-shuffle-ag-d-dep" `lookup` fields of
+          Just files -> parseFileList "x-shuffle-ag-d-dep" files verbosity
+          _          -> return []
+    -- Get sem files
+    semFiles <- case "x-shuffle-ag-s-dep" `lookup` fields of
+          Just files -> parseFileList "x-shuffle-ag-s-dep" files verbosity
+          _          -> return []
+    cag <- cagFiles bi verbosity (dataFiles ++ semFiles)
+    return $ chs ++ cag
+  let pd' = pd { extraSrcFiles = extraSrcFiles pd ++ concat extraSrc}
+  origSDist pd' mblbi hooks flags
+
+mapBuildInfos :: PackageDescription -> (BuildInfo -> IO a) -> IO [a]
+mapBuildInfos pd f = do
+  exes <- forM (executables pd) (f . buildInfo)
+  tests <- forM (testSuites pd) (f . testBuildInfo)
+  libs <- case library pd of
+    Just lib -> do l <- f (libBuildInfo lib) 
+                   return [l]
+    Nothing  -> return []
+  return $ exes ++ tests ++ libs
