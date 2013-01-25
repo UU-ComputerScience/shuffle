@@ -1,5 +1,5 @@
 Name:                shuffle
-Version:             0.1.0.2
+Version:             0.1.0.3
 Copyright:           Utrecht University, Department of Information and Computing Sciences, Software Technology group
 Description:         Shuffle tool used by UHC (Utrecht Haskell Compiler)
 Synopsis:            Shuffle tool for UHC
@@ -53,4 +53,4 @@ Executable shuffle
   Hs-Source-Dirs:    src-main
   Main-Is:           Main.hs
   Build-Depends:     base >= 4 && < 5,
-                     shuffle == 0.1.0.2
+                     shuffle == 0.1.0.3
