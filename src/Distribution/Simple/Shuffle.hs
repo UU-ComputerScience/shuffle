@@ -8,7 +8,7 @@ import Distribution.Simple.LocalBuildInfo (LocalBuildInfo (..))
 import Distribution.Simple.Utils (die, warn, info, notice, findFileWithExtension', 
                                   createDirectoryIfMissingVerbose, getDirectoryContentsRecursive)
 import Distribution.Simple.Setup (BuildFlags(..), SDistFlags(..), fromFlagOrDefault)
-import Distribution.Verbosity (Verbosity, normal, silent)
+import Distribution.Verbosity (Verbosity, normal)
 import Distribution.ParseUtils (runP, parseOptCommaList, parseFilePathQ, ParseResult (..))
 import Distribution.ModuleName (fromString, ModuleName)
 
@@ -16,7 +16,7 @@ import Control.Monad (forM, forM_, when)
 import Data.Char (isSpace)
 import Data.Maybe (catMaybes)
 import Data.List ((\\), union, intersect, nub, intercalate)
-import System.IO (openFile, IOMode(..), hClose, withFile, hFileSize)
+import System.IO (openFile, IOMode(..), hClose, withFile, hFileSize, hGetLine, hIsEOF, hPutStrLn)
 import System.Directory (doesFileExist)
 import System.FilePath ((</>), takeExtension, dropExtension, replaceExtension,
                         normalise, pathSeparator, dropFileName)
@@ -95,7 +95,7 @@ generateAG outDir bi verbosity files = do
             -- Construct modulename to export
             let modName = toModuleName file
             -- Find dependencies
-            (opts, _, _) <- getOpts silent bi "dep" ["--depbase=" ++ dir] file
+            (_, opts, _, _) <- getOpts bi "dep" ["--depbase=" ++ dir] file
             deps' <- getDeps opts file
             let deps'' = map (\dep -> (dir,replaceExtension dep "cag")) deps'
             return $ (Just modName, deps'')
@@ -163,14 +163,15 @@ shuffleBuildHook origBuildHook pd lbi hook bf = do
 
 preprocess :: BuildInfo -> String -> FilePath -> FilePath -> Verbosity -> IO Bool
 preprocess buildInfo tp inFile outFile verbosity = do
-  rebuild <- shouldRebuild inFile outFile
+  (optstr,opts,f,frest) <- getOpts buildInfo tp [] inFile
+  rebuild <- shouldRebuild optstr inFile outFile
   if rebuild
     then do
       notice verbosity $ "[Shuffle] " ++ inFile ++ " -> " ++ outFile
-      info verbosity $ "Using the following options:"
-      (opts,f,frest) <- getOpts verbosity buildInfo tp [] inFile
+      info verbosity $ "Using the following options: " ++ optstr
       createDirectoryIfMissingVerbose verbosity True (dropFileName outFile)
       out <- openFile outFile WriteMode
+      hPutStrLn out $ optline optstr
       empt <- shuffleCompile out opts f frest
       hClose out
       -- Make sure empty files are actually empty
@@ -182,20 +183,31 @@ preprocess buildInfo tp inFile outFile verbosity = do
       size <- withFile outFile ReadMode hFileSize
       return (size == 0)
 
-shouldRebuild :: FilePath -> FilePath -> IO Bool
-shouldRebuild inFile outFile = do
+shouldRebuild :: String -> FilePath -> FilePath -> IO Bool
+shouldRebuild optstr inFile outFile = do
   exists <- doesFileExist outFile
   if exists
     then do timeIn <- fpathGetModificationTime (fpathFromStr inFile)
             timeOut <- fpathGetModificationTime (fpathFromStr outFile)
-            return $ timeIn > timeOut
+            if timeIn > timeOut
+              then return True
+              else do handle <- openFile outFile ReadMode
+                      ans <- do eof <- hIsEOF handle
+                                if eof
+                                  then return True
+                                  else do line <- hGetLine handle
+                                          return $ line /= optline optstr
+                      hClose handle
+                      return ans
     else return True
 
-getOpts :: Verbosity -> BuildInfo -> String -> [String] -> FilePath -> IO (Opts, FPath, [FPathWithAlias])
-getOpts verbosity buildInfo tp extra inFile = do
-  info verbosity $ unwords ws
+optline :: String -> String
+optline optstr = "-- " ++ optstr
+
+getOpts :: BuildInfo -> String -> [String] -> FilePath -> IO (String, Opts, FPath, [FPathWithAlias])
+getOpts buildInfo tp extra inFile = do
   if null errs
-    then return (opts, f, frest)
+    then return (unwords ws, opts, f, frest)
     else die $ unlines errs
   where
     (opts, f, frest, errs) = parseOpts ws
@@ -227,7 +239,7 @@ cagFiles bi verbosity files = do
       Just (dir,file) -> do
         let f1 = normalise $ dir </> file
         -- Find dependencies
-        (opts, _, _) <- getOpts silent bi "dep" ["--depbase=" ++ dir] file
+        (_, opts, _, _) <- getOpts bi "dep" ["--depbase=" ++ dir] file
         deps' <- getDeps opts file
         let deps'' = map (\dep -> normalise $ dir </> replaceExtension dep "cag") deps'
         return $ f1 : deps''
