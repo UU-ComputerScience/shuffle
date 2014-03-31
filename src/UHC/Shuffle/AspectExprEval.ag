@@ -41,4 +41,5 @@ SEM AspectExpr
   | Requires    lhs         .   isAccepted  =   @asp `Set.member` @lhs.givenRefs
   | Or          lhs         .   isAccepted  =   @asp1.isAccepted || @asp2.isAccepted
   | And         lhs         .   isAccepted  =   @asp1.isAccepted && @asp2.isAccepted
+  | Not         lhs         .   isAccepted  =   not @asp.isAccepted
 

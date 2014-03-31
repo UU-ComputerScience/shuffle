@@ -48,7 +48,7 @@ shuffleScanOpts
   = Map.fromList
         [ ( ScLexMeta 0
           , defaultScanOpts
-              { scoKeywordsTxt      =   Set.fromList (kwTxtAsVarTooB ++ [ "_", "-", ".", "<", "=", "@", "||", "&&" ])
+              { scoKeywordsTxt      =   Set.fromList (kwTxtAsVarTooB ++ [ "_", "-", ".", "<", "=", "@", "||", "&&", "!" ])
               , scoSpecChars        =   Set.fromList "(),%{}"
               , scoOpChars          =   Set.fromList "+-=*&^$#@!\\|><~`;:?/_."
               }
@@ -249,6 +249,7 @@ pAGItf = sem_AGItf_AGItf <$> (pFoldr (sem_Lines_Cons,sem_Lines_Nil) (sem_Line_As
 pAspectExprBase     ::  ShPr AspectExpr
 pAspectExprBase     =   AspectExpr_Requires <$> pVar
                     <|> pParens pAspectExpr
+                    <|> AspectExpr_Not <$ pKey "!" <*> pAspectExprBase
 
 pAspectExprAnd      ::  ShPr AspectExpr
 pAspectExprAnd      =   pChainr (AspectExpr_And <$ pKey "&&") (foldr1 AspectExpr_And <$> pList1 pAspectExprBase)

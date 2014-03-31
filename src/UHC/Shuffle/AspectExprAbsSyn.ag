@@ -13,5 +13,6 @@ DATA AspectExpr
                         asp2            : AspectExpr
   | And                 asp1            : AspectExpr
                         asp2            : AspectExpr
+  | Not                 asp             : AspectExpr
 
 DERIVING * : Show, Eq, Ord
