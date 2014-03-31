@@ -132,6 +132,7 @@ data Opts
       , optIndex        		:: Bool
       , optCompiler     		:: [Int]
       , optHelp         		:: Bool
+      , optVersion         		:: Bool
       , optGenDeps      		:: Bool
       , optGenText2Text   		:: Bool						-- include text2text text type annotation
       , optChDest       		:: (ChDest,String)
@@ -166,6 +167,7 @@ defaultOpts
       , optIndex        		=  False
       , optCompiler     		=  []
       , optHelp         		=  False
+      , optVersion         		=  False
       , optGenDeps      		=  False
       , optGenText2Text			=  False
       , optChDest       		=  (ChHere,"")

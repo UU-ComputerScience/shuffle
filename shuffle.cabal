@@ -26,6 +26,7 @@ Library
   Hs-Source-Dirs:    src
   Extensions:        RankNTypes, TypeSynonymInstances, FlexibleInstances, FlexibleContexts
   Exposed-Modules:   UHC.Shuffle,
+                     UHC.Shuffle.Version,
                      Distribution.Simple.Shuffle
   Other-Modules:     UHC.Shuffle.AspectExpr,
                      UHC.Shuffle.AspectExprEval,

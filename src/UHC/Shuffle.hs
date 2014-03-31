@@ -13,22 +13,23 @@ module UHC.Shuffle (
 
 import qualified Data.Set as Set
 import qualified Data.Map as Map
-import Data.Map(Map)
-import Data.Set(Set)
-import System.Exit
-import System.Environment
-import System.IO
-import System.Console.GetOpt
-import UHC.Util.ParseUtils
-import UHC.Util.DependencyGraph
-import UHC.Util.FPath
-import UHC.Util.Pretty
-import UHC.Shuffle.Common
-import UHC.Shuffle.MainAG
-import UHC.Shuffle.ChunkParser
-import UHC.Shuffle.CDoc
-import UHC.Shuffle.CDocSubst
-import Data.Char
+import           Data.Map(Map)
+import            Data.Set(Set)
+import            System.Exit
+import            System.Environment
+import            System.IO
+import            System.Console.GetOpt
+import            UHC.Util.ParseUtils
+import            UHC.Util.DependencyGraph
+import            UHC.Util.FPath
+import            UHC.Util.Pretty
+import            UHC.Shuffle.Common
+import            UHC.Shuffle.MainAG
+import            UHC.Shuffle.ChunkParser
+import            UHC.Shuffle.CDoc
+import            UHC.Shuffle.CDocSubst
+import qualified UHC.Shuffle.Version as Version
+import            Data.Char
 
 -------------------------------------------------------------------------
 -- main
@@ -42,11 +43,13 @@ shuffleMain
        ; let (opts,f,frest,errs) = parseOpts args
        ; if optHelp opts
          then putStrLn (usageInfo "Usage shuffle [options] [file ([alias=]file)*|-]\n\noptions:" cmdLineOpts)
+         else if optVersion opts
+         then putStrLn Version.version
          else if null errs
-              then if optGenDeps opts
-                   then genDeps f opts
-                   else shuffleCompile stdout opts f frest >> return ()
-              else  putStr (head errs)
+         then if optGenDeps opts
+              then genDeps f opts
+              else shuffleCompile stdout opts f frest >> return ()
+         else  putStr (head errs)
        }
 
 parseOpts :: [String] -> (Opts, FPath, [FPathWithAlias], [String])
@@ -283,6 +286,8 @@ cmdLineOpts
           "file with list of strings not to be cross ref'd"
      ,  Option ""   ["help"]            (NoArg oHelp)
           "output this help"
+     ,  Option ""   ["version"]            (NoArg oVersion)
+          "output version number"
      ,  Option ""   ["dep"]             (NoArg oDep)
           "output dependencies"
      ,  Option ""   ["depnameprefix"]   (OptArg oDepNamePrefix "<name>")
@@ -335,6 +340,7 @@ cmdLineOpts
                                 ('a':'p':'p':'x':'=':f) -> o {optChDest = (ChHide,f)}
                                 _                       -> o
          oHelp           o =  o {optHelp = True}
+         oVersion        o =  o {optVersion = True}
          oDep            o =  o {optGenDeps = True}
          oDepNamePrefix ms o = o { optDepNamePrefix = maybe "FILE_" id ms }
          oDepSrcVar     ms o = o { optDepSrcVar = maybe "SRC_VAR" id ms }
