@@ -22,11 +22,15 @@ module UHC.Shuffle.Common
   , ChKind(..), ChDest(..), ChWrap(..)
 
   , VariantRef(..)
+  , variantRefIsPre
   , AspectRefs(..)
   , variantReqmRef, mbVariantReqmRef
   , variantRefFromTop
   , variantReqmUpdRef
-  , VariantOffer(..), VariantReqm(..)
+  , VariantOffer(..)
+  , variantOfferIsPre
+  , VariantReqm(..)
+  , variantReqmIsPre
   , variantOfferFromRef, variantReqmFromRef
   , variantOfferFromTop
   , variantOfferRef, variantOfferRefTop
@@ -220,6 +224,7 @@ data ChKind
   | ChHS
   | ChPlain
   | ChDocLaTeX		-- restricted LaTeX for documentation
+  | ChLhs2TeX		-- lhs2tex
   -- | ChTexInfo
   -- | ChHtml
   -- | ChTwiki
@@ -263,6 +268,11 @@ data VariantRef
   = VarRef 	{vrefRefs :: ![Int]}
   deriving (Show,Eq,Ord)
 
+variantRefIsPre :: VariantRef -> Bool
+variantRefIsPre (VarRef (0:_)) = True
+variantRefIsPre _              = False
+
+
 instance NM VariantRef where
   mkNm (VarRef l)     = nmApdL $ map mkNm l
 
@@ -299,9 +309,14 @@ data VariantOfferForCompare
 
 data VariantOffer
   = VOfferAll
-  | VOfferPre
+  | VOfferPre	{                              vofferAspect :: !AspectRefs}
   | VOfferRef 	{vofferVariant :: !VariantRef, vofferAspect :: !AspectRefs}
   deriving (Show,Eq,Ord)
+
+variantOfferIsPre :: VariantOffer -> Bool
+variantOfferIsPre o = case o of
+  VOfferPre _ -> True
+  _           -> False
 
 {-
 instance Ord VariantOffer where
@@ -321,18 +336,19 @@ type VariantRefOrder   = [[VariantRef]]
 type VariantRefOrderMp = Map.Map VariantRef Int
 
 variantOfferFromRef :: VariantRef -> VariantOffer
-variantOfferFromRef   (VarRef (0:_ )) = VOfferPre
-variantOfferFromRef r@(VarRef (i:is)) = VOfferRef r AspectAll
+variantOfferFromRef r
+  | variantRefIsPre r = VOfferPre   AspectAll
+  | otherwise         = VOfferRef r AspectAll
 
 variantOfferFromTop :: Int -> VariantOffer
 variantOfferFromTop i = variantOfferFromRef (variantRefFromTop i)
 
 variantOfferRef :: VariantOffer -> VariantRef
-variantOfferRef  VOfferPre      = VarRef [0]
+variantOfferRef (VOfferPre   _) = VarRef [0]
 variantOfferRef (VOfferRef r _) = r
 
 variantOfferAsp :: VariantOffer -> AspectRefs
-variantOfferAsp  VOfferPre      = AspectAll
+variantOfferAsp (VOfferPre   a) = a
 variantOfferAsp (VOfferRef _ a) = a
 
 variantOfferRefTop :: VariantOffer -> Int
@@ -366,8 +382,8 @@ sortOnVariantRefOrderMp m vo
     ]
 
 instance NM VariantOffer where
-  mkNm VOfferPre         = mkNm "pre"
-  mkNm VOfferAll         = mkNm "*"
+  mkNm (VOfferPre   _)   = mkNm "pre"
+  mkNm  VOfferAll        = mkNm "*"
   mkNm (VOfferRef r _)   = mkNm r
 
 -------------------------------------------------------------------------
@@ -379,6 +395,10 @@ data VariantReqm
   | VReqmNone
   | VReqmRef 	{ vreqmVariant :: !VariantRef, vreqmAspects :: !AspectRefs }
   deriving (Show,Eq,Ord)
+
+variantReqmIsPre :: VariantReqm -> Bool
+variantReqmIsPre (VReqmRef r _) = variantRefIsPre r
+variantReqmIsPre _              = False
 
 -- type VariantReqm = VariantOffer
 
@@ -392,7 +412,7 @@ mbVariantReqmRef _              = Nothing
 variantReqmRef :: VariantReqm -> VariantRef
 variantReqmRef = maybe (error "variantReqmRef") id . mbVariantReqmRef
 
-variantReqmUpdRef :: VariantReqm -> VariantRef-> VariantReqm
+variantReqmUpdRef :: VariantReqm -> VariantRef -> VariantReqm
 variantReqmUpdRef v@(VReqmRef _ _) r = v {vreqmVariant = r}
 variantReqmUpdRef v                _ = v
 
@@ -402,6 +422,7 @@ variantReqmMatchOffer _        VReqmNone        _                 = False
 variantReqmMatchOffer _        _                VOfferAll         = True
 variantReqmMatchOffer Nothing  (VReqmRef rr ra) (VOfferRef or oa) = rr == or && aspectRefsMatch oa ra
 variantReqmMatchOffer (Just m) (VReqmRef rr ra) (VOfferRef or oa) = Map.member or m && aspectRefsMatch oa ra
+variantReqmMatchOffer _        (VReqmRef rr ra) (VOfferPre    oa) = variantRefIsPre rr && aspectRefsMatch oa ra
 
 instance NM VariantReqm where
   mkNm VReqmAll          = mkNm "*"

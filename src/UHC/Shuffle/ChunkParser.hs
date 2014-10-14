@@ -28,7 +28,7 @@ import UHC.Shuffle.MainAG
 type ScanOptsMp = Map.Map ScState ScanOpts
 
 chKindMp = Map.fromList
-             [ ("hs",ChHS), ("ag",ChAG), ("plain",ChPlain), ("haddock",ChHaddock) ]
+             [ ("hs",ChHS), ("ag",ChAG), ("plain",ChPlain), ("haddock",ChHaddock), ("lhs2tex",ChLhs2TeX) ]
            `Map.union` Map.fromList [ (v,k) | (k,v) <- Map.toList t2tChKinds ]
 chDestMp = Map.fromList [ ("here",ChHere), ("hide",ChHide) ]
 chWrapMp = Map.fromList [ ("hsbox",ChWrapHsBox), ("code",ChWrapCode), ("safecode",ChWrapBoxCode Nothing), ("tt",ChWrapTT), ("tttiny",ChWrapTTtiny) , ("verbatim",ChWrapVerbatim), ("verbatimsmall",ChWrapVerbatimSmall) ]

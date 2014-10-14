@@ -478,7 +478,7 @@ vciHasImpExp :: VariantChunkInfo -> Bool
 vciHasImpExp i = not (null (vciImps i) && null (vciExps i))
 
 vciIsPre :: VariantChunkInfo -> Bool
-vciIsPre = (==VOfferPre) . vciVariantOffer
+vciIsPre = variantOfferIsPre . vciVariantOffer
 
 vciIsHS :: VariantChunkInfo -> Bool
 vciIsHS = (==ChHS) . vciChKind
@@ -492,31 +492,47 @@ vciHasCD = isJust . vciMbCD
 vciSplitPre :: [VariantChunkInfo] -> ([VariantChunkInfo],[VariantChunkInfo])
 vciSplitPre = partition vciIsPre
 
+-- | Take the (possibly absent) Pre stuff, filtering the chunks
+vciTakeFilterPre :: (VariantChunkInfo -> Bool) -> VariantChunkInfoM -> ([VariantChunkInfo],VariantChunkInfoM)
+vciTakeFilterPre pred is
+  = case span (variantOfferIsPre . fst) is of
+        (pre,nonPre) -> (concatMap (filter pred . snd) pre, nonPre)
+{-
+        ((VOfferPre _,p):r) -> (filter pred p,r)
+        _                   -> ([],is)
+-}
+
 vciTakePre :: VariantChunkInfoM -> ([VariantChunkInfo],VariantChunkInfoM)
+vciTakePre = vciTakeFilterPre (const True)
+{-
 vciTakePre is
   = case is of
         ((VOfferPre,p):r) -> (p,r)
-        _            -> ([],is)
+        _                 -> ([],is)
+-}
 
 selectChunks :: Bool -> VariantReqm -> VariantRefOrderMp -> [VariantChunkInfo] -> [(VariantOffer,[VariantChunkInfo])]
 selectChunks appMinus variantReqm allowedVariants agl
-  = let (pre,nonPre)    = vciSplitPre agl
-        vAndVciL        = map (\v -> let vreqm = variantReqmUpdRef variantReqm (variantOfferRef v)
-                                     in  ( v
-                                         , vciSortBySeqNr
-                                           $ vciVariantOfferFilter
-                                               (\offer -> variantReqmMatchOffer Nothing vreqm offer)
-                                               nonPre
-                              )          )
-                              [variantOfferFromRef r | r <- Map.keys allowedVariants]
+  = filter
+      ( not . null . snd )
+      (  vAndVciPreL
+      ++ map (\(v,vciL) -> (v,filter isNotMinused vciL)) vAndVciL
+      )
+  where (pre,nonPre)    = vciSplitPre agl
+        filterAllowed allowedVariants vciL
+                        = [ ( v
+                            , vciSortBySeqNr $ vciVariantOfferFilter
+                                (\offer -> variantReqmMatchOffer Nothing vreqm offer)
+                                vciL
+                            )
+                          | v <- allowedVariants
+                          , let vreqm = variantReqmUpdRef variantReqm (variantOfferRef v)
+                          ]
+        vAndVciPreL     = filterAllowed [VOfferPre AspectAll] pre
+        vAndVciL        = filterAllowed (map variantOfferFromRef $ Map.keys allowedVariants) nonPre
         isNotMinused
           = let minuses = if appMinus then [ m | (_,vciL) <- vAndVciL, ml <- map vciMinusL vciL, m <- ml ] else []
              in \i -> vciChunkRef i `notElem` minuses
-     in filter
-          ( not.null.snd )
-          ( (VOfferPre,pre)
-          : map (\(v,vciL) -> (v,filter isNotMinused vciL)) vAndVciL
-          )
 
 data Build
   = Build
@@ -670,7 +686,7 @@ buildAG opts wrap fileBase is
         ish  = filter vciIsHS noPre'
         buildImpExp = if optAGModHeader opts
                       then buildAGHSModImpExp fileBase ish
-                      else h (buildHSModImpExp fileBase ish)
+                      else h (buildHSModImpExp (\_ -> id) fileBase [] ish)
         pph  = if any vciHasImpExp ish
                then wrap True buildImpExp
                else CDoc_Emp
@@ -787,6 +803,9 @@ SEM AGItf
 mkModNm :: [CDoc] -> CDoc
 mkModNm = cdHor
 
+buildHSPre :: (Bool -> CDoc -> CDoc) -> [VariantChunkInfo] -> CDoc
+buildHSPre wrap pre = cdVer [ wrap False $ vciCD p | p <- pre ]
+
 buildHSImps :: [VariantChunkInfo] -> CDoc
 buildHSImps = cdVer . map (cdVer . map ("import" .#.) . vciImps)
 
@@ -802,8 +821,9 @@ buildHSModuleHead fileBase is
         modNm = if null m then fileBase else head m
      in "module" .#. modNm .-. {- indent 2 -} (exps .-. "where")
 
-buildHSModImpExp :: String -> [VariantChunkInfo] -> CDoc
-buildHSModImpExp fileBase is = buildHSModuleHead fileBase is .-. buildHSImps is
+buildHSModImpExp :: (Bool -> CDoc -> CDoc) -> String -> [VariantChunkInfo] -> [VariantChunkInfo] -> CDoc
+buildHSModImpExp wrap fileBase preHS is
+  = buildHSPre wrap preHS .-. buildHSModuleHead fileBase is .-. buildHSImps is
 
 buildHS :: Opts -> (Bool -> CDoc -> CDoc) -> String -> VariantChunkInfoM -> CDoc
 buildHS opts wrap fileBase is
@@ -811,8 +831,9 @@ buildHS opts wrap fileBase is
                  ChHaddock -> haddockize (vciCD i)
                  _         -> vciCD i
         (pre,noPre) = vciTakePre is
+        (preHS, preOther) = partition vciIsHS pre
         noPre' = vciMToL noPre
-        ppMod = buildHSModImpExp fileBase (vciMToL is)
+        ppMod = buildHSModImpExp wrap fileBase preHS (vciMToL is)
         ppNoPreL
           =   map  ( cdVer
                    . (map  (\i
@@ -828,7 +849,7 @@ buildHS opts wrap fileBase is
          then CDoc_Emp
          else if optPlain opts
          then ppNoPre
-         else (if optPreamble opts then cdVer (map (wrap False . vciCD) pre) else CDoc_Emp)
+         else (if optPreamble opts then buildHSPre wrap preOther else CDoc_Emp)
               .-. wrap True ppMod
               .-. ppNoPre
 }
