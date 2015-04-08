@@ -395,7 +395,7 @@ ATTR AllWord [ | | cdoc USE {.|.} {CDoc_Emp} : CDoc ]
 
 SEM Word
   | White Black lhs         .   cdoc        =   cd @chars
-  | Expand      lhs         .   cdoc		=	cd @exp.str
+  | Expand      lhs         .   cdoc        =   cd @exp.str
 
 SEM Inline
   | URI         lhs         .   cdoc        =   CDoc_Inl @str
@@ -443,19 +443,19 @@ SEM Group
 {
 data VariantChunkInfo
   = VariantChunkInfo
-      { vciLineNr   		:: Int
-      , vciSeqNr    		:: Int
+      { vciLineNr           :: Int
+      , vciSeqNr            :: Int
       , vciVariantOffer     :: VariantOffer
       , vciChunkRef         :: ChunkRef
-      , vciMinusL   		:: [ChunkRef]
-      , vciChKind   		:: ChKind
-      , vciChDest   		:: ChDest
-      , vciMbModNm  		:: Maybe String
-      , vciImps     		:: [String]
-      , vciExps     		:: [String]
-      , vciMbCD     		:: Maybe CDoc
-      , vciMkCD     		:: MkCDoc
-      , vciXRefL    		:: [XRef]
+      , vciMinusL           :: [ChunkRef]
+      , vciChKind           :: ChKind
+      , vciChDest           :: ChDest
+      , vciMbModNm          :: Maybe String
+      , vciImps             :: [String]
+      , vciExps             :: [String]
+      , vciMbCD             :: Maybe CDoc
+      , vciMkCD             :: MkCDoc
+      , vciXRefL            :: [XRef]
       } deriving Show
 
 type VariantChunkInfoM = [(VariantOffer,[VariantChunkInfo])]
@@ -543,11 +543,11 @@ selectChunks appMinus variantReqm allowedVariants agl
 
 data Build
   = Build
-      { bldBase     		:: String
+      { bldBase             :: String
       , bldVariantReqm      :: VariantReqm
-      , bldCD       		:: CDoc
-      , bldHideCD   		:: [(Nm,CDoc)]
-      , bldNmChMp   		:: NmChMp
+      , bldCD               :: CDoc
+      , bldHideCD           :: [(Nm,CDoc)]
+      , bldNmChMp           :: NmChMp
       }
 }
 
