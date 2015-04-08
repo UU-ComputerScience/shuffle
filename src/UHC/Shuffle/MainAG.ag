@@ -1,3 +1,6 @@
+optpragmas {
+{-# LANGUAGE CPP #-}
+}
 MODULE {UHC.Shuffle.MainAG} {}
 {
 import Network.URI
@@ -14,6 +17,10 @@ import UHC.Shuffle.CDocInline
 import qualified Data.Set as Set
 import qualified UHC.Util.FastSeq as Seq
 import UHC.Util.Utils(initlast)
+
+#if __GLASGOW_HASKELL__ >= 710
+import Prelude hiding (Word)
+#endif
 
 -- for debugging:
 -- import UHC.Util.Utils (tr, trp, wordsBy)
