@@ -236,9 +236,9 @@ pWhiteBlack = (\t -> (mbTokWhite t,tokBlack t)) <$> pText
 -- Shuffle chunk parser
 -------------------------------------------------------------------------
 
-type ShPr  c = (IsParser p Tok) => p c
-type ShPr2 c = (IsParser p Tok) => p c -> p c
-type ShPr3 c = (IsParser p Tok) => p c -> p c -> p c
+type ShPr  c = forall p . (IsParser p Tok) => p c
+type ShPr2 c = forall p . (IsParser p Tok) => p c -> p c
+type ShPr3 c = forall p . (IsParser p Tok) => p c -> p c -> p c
 
 mkNmForP :: String -> [String] -> Nm
 mkNmForP h t = nmFromL . concat . map (wordsBy (=='.')) $ (h : t)
