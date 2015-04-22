@@ -127,72 +127,72 @@ type KVMap = Map.Map String String
 
 data Opts 
   = Opts
-      { optAG           		:: Bool						-- generate AG
-      , optHS           		:: Bool						-- generate Haskell
-      , optPlain        		:: Bool						-- leave as is
-      , optLaTeX        		:: Bool						-- generate latex
-      , optPreamble     		:: Bool						-- include preamble
-      , optLinePragmas  		:: Bool						-- include line pragmas
-      , optIndex        		:: Bool
-      , optCompiler     		:: [Int]
-      , optHelp         		:: Bool
-      , optVersion         		:: Bool
-      , optGenDeps      		:: Bool
-      , optGenText2Text   		:: Bool						-- include text2text text type annotation
-      , optChDest       		:: (ChDest,String)
-      , optGenReqm   			:: VariantReqm
-      , optBaseName     		:: Maybe String
-      , optBaseFPath    		:: FPath
-      , optWrapLhs2tex  		:: ChWrap
-      , optMbXRefExcept 		:: Maybe String
-      , optVariantRefOrder		:: VariantRefOrder
-      , optDefs         		:: KVMap
-      , optDepNamePrefix 		:: String
-      , optDepSrcVar     		:: String
-      , optDepDstVar     		:: String
-      , optDepMainVar    		:: String
-      , optDepDpdsVar    		:: String
-      , optDepOrigDpdsVar 		:: String
-      , optDepDerivDpdsVar 		:: String
-      , optDepBaseDir     		:: String
-      , optDepTerm        		:: Map String [String]
-      , optDepIgn         		:: Set String
-      , optAGModHeader    		:: Bool
+      { optAG                   :: Bool                     -- generate AG
+      , optHS                   :: Bool                     -- generate Haskell
+      , optPlain                :: Bool                     -- leave as is
+      , optLaTeX                :: Bool                     -- generate latex
+      , optPreamble             :: Bool                     -- include preamble
+      , optLinePragmas          :: Bool                     -- include line pragmas
+      , optIndex                :: Bool
+      , optCompiler             :: [Int]
+      , optHelp                 :: Bool
+      , optVersion              :: Bool
+      , optGenDeps              :: Bool
+      , optGenText2Text         :: Bool                     -- include text2text text type annotation
+      , optChDest               :: (ChDest,String)
+      , optGenReqm              :: VariantReqm
+      , optBaseName             :: Maybe String
+      , optBaseFPath            :: FPath
+      , optWrapLhs2tex          :: ChWrap
+      , optMbXRefExcept         :: Maybe String
+      , optVariantRefOrder      :: VariantRefOrder
+      , optDefs                 :: KVMap
+      , optDepNamePrefix        :: String
+      , optDepSrcVar            :: String
+      , optDepDstVar            :: String
+      , optDepMainVar           :: String
+      , optDepDpdsVar           :: String
+      , optDepOrigDpdsVar       :: String
+      , optDepDerivDpdsVar      :: String
+      , optDepBaseDir           :: String
+      , optDepTerm              :: Map String [String]
+      , optDepIgn               :: Set String
+      , optAGModHeader          :: Bool
       } deriving (Show)
 
 defaultOpts
   = Opts
-      { optAG           		=  False
-      , optHS           		=  False
-      , optLaTeX        		=  False
-      , optPreamble     		=  True
-      , optLinePragmas  		=  False
-      , optPlain        		=  False
-      , optIndex        		=  False
-      , optCompiler     		=  []
-      , optHelp         		=  False
-      , optVersion         		=  False
-      , optGenDeps      		=  False
-      , optGenText2Text			=  False
-      , optChDest       		=  (ChHere,"")
-      , optGenReqm   			=  VReqmNone
-      , optBaseName     		=  Nothing
-      , optBaseFPath    		=  emptyFPath
-      , optWrapLhs2tex  		=  ChWrapCode
-      , optMbXRefExcept 		=  Nothing
-      , optVariantRefOrder	 	=  [[]]
-      , optDefs					=  Map.empty
-      , optDepNamePrefix 		=  error "optDepNamePrefix not set"
-      , optDepSrcVar     		=  error "optDepSrcVar not set"
-      , optDepDstVar     		=  error "optDepDstVar not set"
-      , optDepMainVar    		=  error "optDepMainVar not set"
-      , optDepDpdsVar    		=  error "optDepDpdsVar not set"
-      , optDepOrigDpdsVar 		=  error "optDepOrigDpdsVar not set"
-      , optDepDerivDpdsVar 		=  error "optDepDerivDpdsVar not set"
-      , optDepBaseDir     		=  error "optDepBaseDir not set"
-      , optDepTerm        		=  Map.empty
-      , optDepIgn         		=  Set.empty
-      , optAGModHeader    		=  True
+      { optAG                   =  False
+      , optHS                   =  False
+      , optLaTeX                =  False
+      , optPreamble             =  True
+      , optLinePragmas          =  False
+      , optPlain                =  False
+      , optIndex                =  False
+      , optCompiler             =  []
+      , optHelp                 =  False
+      , optVersion              =  False
+      , optGenDeps              =  False
+      , optGenText2Text         =  False
+      , optChDest               =  (ChHere,"")
+      , optGenReqm              =  VReqmNone
+      , optBaseName             =  Nothing
+      , optBaseFPath            =  emptyFPath
+      , optWrapLhs2tex          =  ChWrapCode
+      , optMbXRefExcept         =  Nothing
+      , optVariantRefOrder      =  [[]]
+      , optDefs                 =  Map.empty
+      , optDepNamePrefix        =  error "optDepNamePrefix not set"
+      , optDepSrcVar            =  error "optDepSrcVar not set"
+      , optDepDstVar            =  error "optDepDstVar not set"
+      , optDepMainVar           =  error "optDepMainVar not set"
+      , optDepDpdsVar           =  error "optDepDpdsVar not set"
+      , optDepOrigDpdsVar       =  error "optDepOrigDpdsVar not set"
+      , optDepDerivDpdsVar      =  error "optDepDerivDpdsVar not set"
+      , optDepBaseDir           =  error "optDepBaseDir not set"
+      , optDepTerm              =  Map.empty
+      , optDepIgn               =  Set.empty
+      , optAGModHeader          =  True
       }
 
 optsHasNoVariantRefOrder :: Opts -> Bool
@@ -223,8 +223,8 @@ data ChKind
   = ChAG
   | ChHS
   | ChPlain
-  | ChDocLaTeX		-- restricted LaTeX for documentation
-  | ChLhs2TeX		-- lhs2tex
+  | ChDocLaTeX      -- restricted LaTeX for documentation
+  | ChLhs2TeX       -- lhs2tex
   -- | ChTexInfo
   -- | ChHtml
   -- | ChTwiki
@@ -238,15 +238,15 @@ data ChDest
 data ChWrap
   = ChWrapCode
   | ChWrapHsBox
-  | ChWrapBoxCode 			(Maybe String)
-  | ChWrapBeamerBlockCode 	String
+  | ChWrapBoxCode           (Maybe String)
+  | ChWrapBeamerBlockCode   String
   | ChWrapTT
   | ChWrapTTtiny
   | ChWrapVerbatim
   | ChWrapVerbatimSmall
   | ChWrapPlain
-  | ChWrapT2T				ChKind				-- wrap for text2text
-  | ChWrapComp				ChWrap ChWrap		-- compose
+  | ChWrapT2T               ChKind              -- wrap for text2text
+  | ChWrapComp              ChWrap ChWrap       -- compose
   | ChWrapNone
   deriving (Show,Eq,Ord)
 
@@ -265,7 +265,7 @@ t2tChKinds
 -------------------------------------------------------------------------
 
 data VariantRef
-  = VarRef 	{vrefRefs :: ![Int]}
+  = VarRef  {vrefRefs :: ![Int]}
   deriving (Show,Eq,Ord)
 
 variantRefIsPre :: VariantRef -> Bool
@@ -309,8 +309,8 @@ data VariantOfferForCompare
 
 data VariantOffer
   = VOfferAll
-  | VOfferPre	{                              vofferAspect :: !AspectRefs}
-  | VOfferRef 	{vofferVariant :: !VariantRef, vofferAspect :: !AspectRefs}
+  | VOfferPre   {                              vofferAspect :: !AspectRefs}
+  | VOfferRef   {vofferVariant :: !VariantRef, vofferAspect :: !AspectRefs}
   deriving (Show,Eq,Ord)
 
 variantOfferIsPre :: VariantOffer -> Bool
@@ -327,9 +327,9 @@ instance Ord VariantOffer where
   _                 `compare` VOfferAll          = GT
   _                 `compare` VOfferPre          = GT
   (VOfferRef r1 a1) `compare` (VOfferRef r2 a2)  = case r1 `compare` r2 of
-                    								 EQ -> case (a1,a2) of
-                    								         (AspectAll,AspectAll) -> EQ
-                    								         (_        ,AspectAll) ->
+                                                     EQ -> case (a1,a2) of
+                                                             (AspectAll,AspectAll) -> EQ
+                                                             (_        ,AspectAll) ->
 -}
 
 type VariantRefOrder   = [[VariantRef]]
@@ -393,7 +393,7 @@ instance NM VariantOffer where
 data VariantReqm
   = VReqmAll
   | VReqmNone
-  | VReqmRef 	{ vreqmVariant :: !VariantRef, vreqmAspects :: !AspectRefs }
+  | VReqmRef    { vreqmVariant :: !VariantRef, vreqmAspects :: !AspectRefs }
   deriving (Show,Eq,Ord)
 
 variantReqmIsPre :: VariantReqm -> Bool
