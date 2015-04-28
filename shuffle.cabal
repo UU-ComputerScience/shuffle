@@ -1,5 +1,5 @@
 Name:                shuffle
-Version:             0.1.3.1
+Version:             0.1.3.2
 Copyright:           Utrecht University, Department of Information and Computing Sciences, Software Technology group
 Description:         Shuffle tool used by UHC (Utrecht Haskell Compiler)
 Synopsis:            Shuffle tool for UHC
@@ -13,6 +13,7 @@ Category:            Development
 Build-Type:          Custom
 Cabal-Version:       >= 1.8
 Extra-Source-Files:  uuagc_options,
+                     changelog.md,
                      src/UHC/Shuffle/AspectExprAbsSyn.ag,
                      src/UHC/Shuffle/CDocAbsSyn.ag,
                      src/UHC/Shuffle/CDocCommonAG.ag,
@@ -62,4 +63,4 @@ Executable shuffle
   Hs-Source-Dirs:    src-main
   Main-Is:           Main.hs
   Build-Depends:     base >= 4 && < 5,
-                     shuffle >= 0.1.3.0
+                     shuffle >= 0.1.3.2
