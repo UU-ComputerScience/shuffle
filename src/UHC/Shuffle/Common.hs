@@ -363,7 +363,7 @@ variantOfferIsOffered v         s = Map.member (variantOfferRef v) s
 sortOnVariantRefOrderMp' :: VariantRefOrderMp -> [(VariantOffer,x)] -> [((VariantOffer,Bool),x)]
 sortOnVariantRefOrderMp' m l
   = map snd
-  $ sortOn fst
+  $ sortOnLazy fst
   $ [ ( VariantOfferForCompare (maybe 0 id o) (variantOfferAsp v)
       , ((v,isJust o || v == VOfferAll),x)
       )
@@ -371,10 +371,10 @@ sortOnVariantRefOrderMp' m l
     ]
 
 sortOnVariantRefOrderMp :: VariantRefOrderMp -> [(VariantOffer,x)] -> [x]
--- sortOnVariantRefOrderMp m = map snd . sortOn fst . map (\(v,x) -> (Map.findWithDefault 0 (variantOfferRef v) m,x))
+-- sortOnVariantRefOrderMp m = map snd . sortOnLazy fst . map (\(v,x) -> (Map.findWithDefault 0 (variantOfferRef v) m,x))
 sortOnVariantRefOrderMp m vo
   = map snd
-  $ sortOn fst
+  $ sortOnLazy fst
   $ [ ( VariantOfferForCompare o (variantOfferAsp v)
       , x
       )
