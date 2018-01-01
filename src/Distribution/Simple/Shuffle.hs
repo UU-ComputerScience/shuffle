@@ -5,12 +5,13 @@ import Distribution.Simple.PreProcess (PreProcessor (..), mkSimplePreProcessor)
 import Distribution.PackageDescription (PackageDescription (..), BuildInfo (..), Executable (..),
                                         Library (..), TestSuite (..))
 import Distribution.Simple.LocalBuildInfo (LocalBuildInfo (..))
-import Distribution.Simple.Utils (die, warn, info, notice, findFileWithExtension', 
+import Distribution.Simple.Utils (dieNoVerbosity, warn, info, notice, findFileWithExtension', 
                                   createDirectoryIfMissingVerbose, getDirectoryContentsRecursive)
 import Distribution.Simple.Setup (BuildFlags(..), SDistFlags(..), fromFlagOrDefault)
 import Distribution.Verbosity (Verbosity, normal)
 import Distribution.ParseUtils (runP, parseOptCommaList, parseFilePathQ, ParseResult (..))
 import Distribution.ModuleName (fromString, ModuleName)
+import Distribution.Types.UnqualComponentName (unUnqualComponentName)
 
 import Control.Monad (forM, forM_, when)
 import Data.Char (isSpace)
@@ -59,7 +60,7 @@ shuffleHooks h = h { buildHook = shuffleBuildHook (buildHook h)
 parseFileList :: String -> String -> Verbosity -> IO [FilePath]
 parseFileList fieldName field verbosity =
   case runP 0 fieldName (parseOptCommaList parseFilePathQ) field of
-    ParseFailed err    -> die $ show err
+    ParseFailed err    -> dieNoVerbosity $ show err
     ParseOk warnings r -> mapM_ (warn verbosity . show) warnings >> return r
 
 toModuleName :: FilePath -> ModuleName
@@ -84,7 +85,7 @@ generateAG outDir bi verbosity files = do
   deps <- forM files $ \inFile -> do
     mbPath <- findFileWithExtension' [takeExtension inFile] (hsSourceDirs bi) (dropExtension inFile)
     case mbPath of
-      Nothing -> die $ "can't find source for " ++ inFile ++ " in " ++ intercalate ", " (hsSourceDirs bi)
+      Nothing -> dieNoVerbosity $ "can't find source for " ++ inFile ++ " in " ++ intercalate ", " (hsSourceDirs bi)
       Just (dir,file) -> do
         -- Preprocess this file
         let outFile = outDir </> replaceExtension file "ag"
@@ -146,7 +147,7 @@ shuffleBuildHook origBuildHook pd lbi hook bf = do
         return $ (mods, newBi)
   -- Add all options and continue with original hook
   exes <- forM (executables pd) $ \exe -> do
-    (mods, newBi) <- addOpts (buildDir lbi </> exeName exe </> exeName exe ++ "-tmp") (buildInfo exe)
+    (mods, newBi) <- addOpts (buildDir lbi </> unUnqualComponentName (exeName exe) </> unUnqualComponentName (exeName exe) ++ "-tmp") (buildInfo exe)
     let newBi' = newBi { otherModules = mods ++ otherModules newBi }
     return $ exe { buildInfo = newBi' }
   lib <- case library pd of
@@ -156,7 +157,7 @@ shuffleBuildHook origBuildHook pd lbi hook bf = do
                         , exposedModules = mods ++ exposedModules l }
     Nothing -> return Nothing
   tests <- forM (testSuites pd) $ \test -> do
-    (mods, newBi) <- addOpts (buildDir lbi </> testName test </> testName test ++ "-tmp") (testBuildInfo test)
+    (mods, newBi) <- addOpts (buildDir lbi </> unUnqualComponentName (testName test) </> unUnqualComponentName (testName test) ++ "-tmp") (testBuildInfo test)
     let newBi' = newBi { otherModules = mods ++ otherModules newBi }
     return $ test { testBuildInfo = newBi' }
   origBuildHook (pd { executables = exes, library = lib, testSuites = tests }) lbi hook bf
@@ -208,7 +209,7 @@ getOpts :: BuildInfo -> String -> [String] -> FilePath -> IO (String, Opts, FPat
 getOpts buildInfo tp extra inFile = do
   if null errs
     then return (unwords ws, opts, f, frest)
-    else die $ unlines errs
+    else dieNoVerbosity $ unlines errs
   where
     (opts, f, frest, errs) = parseOpts ws
     ws = case ("x-shuffle-" ++ tp) `lookup` customFieldsBI buildInfo of
@@ -235,7 +236,7 @@ cagFiles bi verbosity files = do
   deps <- forM files $ \inFile -> do
     mbPath <- findFileWithExtension' [takeExtension inFile] (hsSourceDirs bi) (dropExtension inFile)
     case mbPath of
-      Nothing -> die $ "can't find source for " ++ inFile ++ " in " ++ intercalate ", " (hsSourceDirs bi)
+      Nothing -> dieNoVerbosity $ "can't find source for " ++ inFile ++ " in " ++ intercalate ", " (hsSourceDirs bi)
       Just (dir,file) -> do
         let f1 = normalise $ dir </> file
         -- Find dependencies

@@ -14,22 +14,22 @@ module UHC.Shuffle (
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 import           Data.Map(Map)
-import            Data.Set(Set)
-import            System.Exit
-import            System.Environment
-import            System.IO
-import            System.Console.GetOpt
-import            UHC.Util.ParseUtils
-import            UHC.Util.DependencyGraph
-import            UHC.Util.FPath
-import            UHC.Util.Pretty
-import            UHC.Shuffle.Common
-import            UHC.Shuffle.MainAG
-import            UHC.Shuffle.ChunkParser
-import            UHC.Shuffle.CDoc
-import            UHC.Shuffle.CDocSubst
+import           Data.Set(Set)
+import           System.Exit
+import           System.Environment
+import           System.IO
+import           System.Console.GetOpt
+import           UHC.Util.ParseUtils
+import           UHC.Util.DependencyGraph
+import           UHC.Util.FPath
+import           UHC.Util.Pretty
+import           UHC.Shuffle.Common
+import           UHC.Shuffle.MainAG
+import           UHC.Shuffle.ChunkParser
+import           UHC.Shuffle.CDoc
+import           UHC.Shuffle.CDocSubst
 import qualified UHC.Shuffle.Version as Version
-import            Data.Char
+import           Data.Char
 
 -------------------------------------------------------------------------
 -- main

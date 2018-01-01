@@ -13,7 +13,8 @@ main = defaultMainWithHooks $
 import Distribution.PackageDescription
 import Distribution.Simple.UserHooks
 import Distribution.Package
-import Data.Version
+import Distribution.Version
+-- import Data.Version
 
 main :: IO ()
 main = defaultMainWithHooks $
