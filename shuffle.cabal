@@ -11,13 +11,19 @@ Author:              UHC Team
 Maintainer:          uhc-developers@lists.science.uu.nl
 Category:            Development
 Build-Type:          Custom
-Cabal-Version:       >= 1.23
+Cabal-Version:       2.0
 Extra-Source-Files:  uuagc_options,
                      changelog.md,
+                     src/UHC/Shuffle/AspectExpr.ag,
                      src/UHC/Shuffle/AspectExprAbsSyn.ag,
+                     src/UHC/Shuffle/AspectExprEval.ag,
+                     src/UHC/Shuffle/CDoc.ag,
                      src/UHC/Shuffle/CDocAbsSyn.ag,
                      src/UHC/Shuffle/CDocCommonAG.ag,
-                     src/UHC/Shuffle/ChunkAbsSyn.ag
+                     src/UHC/Shuffle/CDocInline.ag,
+                     src/UHC/Shuffle/CDocSubst.ag,
+                     src/UHC/Shuffle/ChunkAbsSyn.ag,
+                     src/UHC/Shuffle/MainAG.ag
 
 Source-Repository head
   Type:              git
@@ -36,12 +42,18 @@ Library
                      Distribution.Simple.Shuffle
   Other-Modules:     UHC.Shuffle.AspectExpr,
                      UHC.Shuffle.AspectExprEval,
-                     UHC.Shuffle.Common,
                      UHC.Shuffle.CDoc,
                      UHC.Shuffle.CDocCommon,
-                     UHC.Shuffle.CDocSubst,
                      UHC.Shuffle.CDocInline,
+                     UHC.Shuffle.CDocSubst,
                      UHC.Shuffle.ChunkParser,
+                     UHC.Shuffle.Common,
+                     UHC.Shuffle.MainAG
+  autogen-modules:   UHC.Shuffle.AspectExpr,
+                     UHC.Shuffle.AspectExprEval,
+                     UHC.Shuffle.CDoc,
+                     UHC.Shuffle.CDocInline,
+                     UHC.Shuffle.CDocSubst,
                      UHC.Shuffle.MainAG
   Build-Depends:     base >= 4 && < 5,
                      containers >= 0.4,
@@ -50,9 +62,10 @@ Library
                      array >= 0.4,
                      uulib >= 0.9,
                      uuagc >= 0.9.40.3,
-                     uuagc-cabal >= 1.1.0.0,
+                     uuagc-cabal >= 1.2.0.0,
                      uhc-util >= 0.1.5.5,
-                     Cabal >= 2.0.0.2,
+                     Cabal >= 3.0.0.0,
+                     parsec >= 3.1.13.0,
                      filepath >= 1.2
   if flag(network-uri)
     build-depends:   network-uri >= 2.6,
@@ -69,6 +82,6 @@ Executable shuffle
 
 custom-setup
   setup-depends:     base >= 4 && < 5,
-                     uuagc-cabal >= 1.1.0.0,
+                     uuagc-cabal >= 1.2.0.0,
                      uuagc >= 0.9.40.3,
-                     Cabal >= 2.0.0.2
+                     Cabal >= 3.0.0.0

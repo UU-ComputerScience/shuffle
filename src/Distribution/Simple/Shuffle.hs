@@ -1,17 +1,21 @@
 module Distribution.Simple.Shuffle (shuffleHooks) where
 
+import qualified Text.Parsec as Parsec
+
 import Distribution.Simple (UserHooks (..))
 import Distribution.Simple.PreProcess (PreProcessor (..), mkSimplePreProcessor)
 import Distribution.PackageDescription (PackageDescription (..), BuildInfo (..), Executable (..),
                                         Library (..), TestSuite (..))
 import Distribution.Simple.LocalBuildInfo (LocalBuildInfo (..))
-import Distribution.Simple.Utils (dieNoVerbosity, warn, info, notice, findFileWithExtension', 
+import Distribution.Simple.Utils (dieNoVerbosity, warn, info, notice, findFileWithExtension',
                                   createDirectoryIfMissingVerbose, getDirectoryContentsRecursive)
 import Distribution.Simple.Setup (BuildFlags(..), SDistFlags(..), fromFlagOrDefault)
 import Distribution.Verbosity (Verbosity, normal)
-import Distribution.ParseUtils (runP, parseOptCommaList, parseFilePathQ, ParseResult (..))
+import Distribution.Parsec (unPP, parsecOptCommaList, parsecFilePath)
 import Distribution.ModuleName (fromString, ModuleName)
 import Distribution.Types.UnqualComponentName (unUnqualComponentName)
+import Distribution.CabalSpecVersion (cabalSpecLatest)
+import Distribution.Parsec.FieldLineStream (fieldLineStreamFromString)
 
 import Control.Monad (forM, forM_, when)
 import Data.Char (isSpace)
@@ -54,14 +58,14 @@ import UHC.Shuffle (shuffleCompile, parseOpts, getDeps, Opts, FPathWithAlias)
 -- >                        Another.cag
 --
 shuffleHooks :: UserHooks -> UserHooks
-shuffleHooks h = h { buildHook = shuffleBuildHook (buildHook h)  
-                   , sDistHook = mySDist (sDistHook h) }
+shuffleHooks h = h { buildHook = shuffleBuildHook (buildHook h) }
+                   -- , sDistHook = mySDist (sDistHook h) }
 
 parseFileList :: String -> String -> Verbosity -> IO [FilePath]
 parseFileList fieldName field verbosity =
-  case runP 0 fieldName (parseOptCommaList parseFilePathQ) field of
-    ParseFailed err    -> dieNoVerbosity $ show err
-    ParseOk warnings r -> mapM_ (warn verbosity . show) warnings >> return r
+  case Parsec.runParser ((,) <$> unPP (parsecOptCommaList parsecFilePath) cabalSpecLatest <*> Parsec.getState <* Parsec.eof) [] fieldName (fieldLineStreamFromString field) of
+    Left err            -> dieNoVerbosity $ show err
+    Right (r, warnings) -> mapM_ (warn verbosity . show) warnings >> return r
 
 toModuleName :: FilePath -> ModuleName
 toModuleName = fromString . map (\x -> if x == pathSeparator then '.' else x) . dropExtension
@@ -251,7 +255,7 @@ chsFiles ignore bi = do
   fs <- forM (hsSourceDirs bi) $ \dir -> do
     contents <- getDirectoryContentsRecursive dir
     return $
-      map (\file -> normalise $ dir </> file) $ 
+      map (\file -> normalise $ dir </> file) $
       filter (not . (`elem` ignore)) $
       filter ((==".chs") . takeExtension) contents
   return $ concat fs
@@ -285,7 +289,7 @@ mapBuildInfos pd f = do
   exes <- forM (executables pd) (f . buildInfo)
   tests <- forM (testSuites pd) (f . testBuildInfo)
   libs <- case library pd of
-    Just lib -> do l <- f (libBuildInfo lib) 
+    Just lib -> do l <- f (libBuildInfo lib)
                    return [l]
     Nothing  -> return []
   return $ exes ++ tests ++ libs

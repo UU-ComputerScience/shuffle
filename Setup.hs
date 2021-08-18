@@ -14,7 +14,7 @@ import Distribution.PackageDescription
 import Distribution.Simple.UserHooks
 import Distribution.Package
 import Distribution.Version
--- import Data.Version
+import qualified Data.Version
 
 main :: IO ()
 main = defaultMainWithHooks $
@@ -28,4 +28,4 @@ main = defaultMainWithHooks $
           postConf hooks args cfg pkgDescr bi
           writeFile "src/UHC/Shuffle/Version.hs" $
             "module UHC.Shuffle.Version where\n" ++
-            "version = \"" ++ showVersion (pkgVersion $ package pkgDescr) ++ "\"\n"
+            "version = \"" ++ Data.Version.showVersion (Data.Version.makeVersion $ versionNumbers $ pkgVersion $ package pkgDescr) ++ "\"\n"
